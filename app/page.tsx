@@ -387,7 +387,7 @@ export default function Home() {
                 value={spreadsheetUrl}
                 onChange={(e) => setSpreadsheetUrl(e.target.value)}
                 placeholder="스프레드시트 URL 또는 ID를 입력하세요"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder:text-gray-600"
               />
               <button
                 onClick={fetchSheets}
@@ -547,7 +547,7 @@ export default function Home() {
                         handleExcelUpload(file, activeTab);
                       }
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black file:text-black file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:cursor-pointer hover:file:bg-gray-200"
                   />
                 </div>
               )}
@@ -571,7 +571,7 @@ export default function Home() {
                     }}
                     placeholder="엑셀에서 복사한 데이터를 붙여넣으세요"
                     rows={10}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-black placeholder:text-gray-600"
                   />
                   <button
                     onClick={() => handlePasteData(activeTab)}
@@ -599,7 +599,7 @@ export default function Home() {
                       },
                     }));
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
                 {currentTabData.startDate && (
                   <p className="mt-2 text-sm text-gray-600">

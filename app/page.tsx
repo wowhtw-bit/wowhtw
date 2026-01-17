@@ -538,7 +538,7 @@ export default function Home() {
                     엑셀 파일 업로드
                   </label>
                   <input
-                    ref={(el) => (fileInputRefs.current[activeTab] = el)}
+                    ref={(el) => { fileInputRefs.current[activeTab] = el; }}
                     type="file"
                     accept=".xlsx,.xls"
                     onChange={(e) => {

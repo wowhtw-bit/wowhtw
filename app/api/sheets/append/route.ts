@@ -11,7 +11,7 @@ function getCredentials() {
   }
   
   // 로컬 환경에서는 파일에서 읽기
-  const credentialsPath = join(process.cwd(), 'my-project-10565-484606-b5dd0171d354.json');
+  const credentialsPath = join(process.cwd(), 'webtoon-gwsapi-7c26c9d9b1a5.json');
   try {
     return JSON.parse(readFileSync(credentialsPath, 'utf-8'));
   } catch (error) {

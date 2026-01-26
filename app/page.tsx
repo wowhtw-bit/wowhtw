@@ -25,13 +25,19 @@ interface SheetTabData {
 }
 
 export default function Home() {
-  const [spreadsheetUrl, setSpreadsheetUrl] = useState('');
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState('https://docs.google.com/spreadsheets/d/1Khjhh49GE4u5XWlhWCAnvWBnNHoywnY3kz48tj3N5zU/edit?gid=558305238#gid=558305238');
   const [sheets, setSheets] = useState<SheetInfo[]>([]);
   const [selectedSheets, setSelectedSheets] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>('');
   const [sheetTabs, setSheetTabs] = useState<Record<string, SheetTabData>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  // 전역 기준 날짜를 가져오는 함수 (지난주 월요일)
+  const getDefaultWeekStartDate = () => {
+    return dayjs().subtract(1, 'week').startOf('isoWeek').format('YYYY-MM-DD');
+  };
+
+  const [globalStartDate, setGlobalStartDate] = useState<string>(getDefaultWeekStartDate());
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // URL에서 스프레드시트 ID 추출
@@ -44,11 +50,6 @@ export default function Home() {
     }
     
     return urlOrId.trim();
-  };
-
-  // 오늘 날짜 기준 주간 시작일 계산 (월요일)
-  const getDefaultWeekStartDate = () => {
-    return dayjs().startOf('isoWeek').format('YYYY-MM-DD');
   };
 
   // 주간 시작일 계산 (월요일)
@@ -104,18 +105,20 @@ export default function Home() {
     
     // 새로 선택된 시트에 대한 탭 데이터 초기화
     const newTabs: Record<string, SheetTabData> = { ...sheetTabs };
-    const defaultStartDate = getDefaultWeekStartDate();
     sheetNames.forEach((sheetName) => {
       if (!newTabs[sheetName]) {
         newTabs[sheetName] = {
           sheetName,
-          startDate: defaultStartDate,
+          startDate: globalStartDate,
           dataMode: 'paste',
           excelFile: null,
           pastedData: '',
           parsedData: [],
           filteredData: [],
         };
+      } else {
+        // 기존 시트도 전역 날짜로 업데이트
+        newTabs[sheetName].startDate = globalStartDate;
       }
     });
     
@@ -132,6 +135,22 @@ export default function Home() {
     if (sheetNames.length > 0 && !activeTab) {
       setActiveTab(sheetNames[0]);
     }
+  };
+
+  // 전역 기준 날짜 변경 핸들러
+  const handleGlobalStartDateChange = (newDate: string) => {
+    setGlobalStartDate(newDate);
+    // 모든 시트 탭의 날짜를 업데이트
+    setSheetTabs((prev) => {
+      const updated: Record<string, SheetTabData> = {};
+      Object.keys(prev).forEach((sheetName) => {
+        updated[sheetName] = {
+          ...prev[sheetName],
+          startDate: newDate,
+        };
+      });
+      return updated;
+    });
   };
 
   // 엑셀 파일 읽기
@@ -173,11 +192,16 @@ export default function Home() {
       const lines = tabData.pastedData.trim().split('\n');
       const data = lines.map((line) => {
         if (line.includes('\t')) {
+          // 탭으로 구분
           return line.split('\t');
-        } else if (line.includes(',')) {
+        } else if (line.includes(',') && !line.match(/\d+,\d+/)) {
+          // 쉼표로 구분 (단, 숫자 안의 쉼표가 아닌 경우만)
+          // 예: "이름, 나이, 주소" 같은 경우
           return line.split(',').map((cell) => cell.trim());
         } else {
-          return [line];
+          // 공백으로 구분 (연속된 공백을 하나의 구분자로 처리)
+          // 숫자 안의 쉼표(예: 183,566)는 하나의 셀로 유지됨
+          return line.split(/\s+/).filter((cell) => cell.length > 0);
         }
       });
       
@@ -200,7 +224,7 @@ export default function Home() {
     const tabData = sheetTabs[sheetName];
     if (!tabData) return;
     
-    if (!tabData.startDate) {
+    if (!globalStartDate) {
       setMessage({ type: 'error', text: '기준 날짜를 선택해주세요.' });
       return;
     }
@@ -211,8 +235,8 @@ export default function Home() {
     }
 
     try {
-      const weekStart = getWeekStartDate(tabData.startDate);
-      const weekEnd = getWeekEndDate(tabData.startDate);
+      const weekStart = getWeekStartDate(globalStartDate);
+      const weekEnd = getWeekEndDate(globalStartDate);
 
       const header = tabData.parsedData[0];
       const dataRows = tabData.parsedData.slice(1);
@@ -398,7 +422,7 @@ export default function Home() {
               </button>
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              예: https://docs.google.com/spreadsheets/d/1Khjhh49GE4u5XWlhWCAnvWBnNHoywnY3kz48tj3N5zU/edit
+              예: https://docs.google.com/spreadsheets/d/1Khjhh49GE4u5XWlhWCAnvWBnNHoywnY3kz48tj3N5zU/edit?gid=558305238#gid=558305238
             </p>
           </div>
 
@@ -480,6 +504,26 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* 전역 기준 날짜 선택 */}
+          {selectedSheets.length > 0 && (
+            <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                기준 날짜 (주간 시작일 - 월요일) - 모든 시트에 적용
+              </label>
+              <input
+                type="date"
+                value={globalStartDate}
+                onChange={(e) => handleGlobalStartDateChange(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+              />
+              {globalStartDate && (
+                <p className="mt-2 text-sm text-gray-600">
+                  선택된 주간: {getWeekStartDate(globalStartDate)} (월) ~ {getWeekEndDate(globalStartDate)} (일)
+                </p>
+              )}
             </div>
           )}
 
@@ -582,37 +626,11 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 기준 날짜 선택 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  기준 날짜 (주간 시작일 - 월요일)
-                </label>
-                <input
-                  type="date"
-                  value={currentTabData.startDate}
-                  onChange={(e) => {
-                    setSheetTabs((prev) => ({
-                      ...prev,
-                      [activeTab]: {
-                        ...prev[activeTab],
-                        startDate: e.target.value,
-                      },
-                    }));
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                />
-                {currentTabData.startDate && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    선택된 주간: {getWeekStartDate(currentTabData.startDate)} (월) ~ {getWeekEndDate(currentTabData.startDate)} (일)
-                  </p>
-                )}
-              </div>
-
               {/* 데이터 필터링 버튼 */}
               <div>
                 <button
                   onClick={() => filterDataByDate(activeTab)}
-                  disabled={loading || !currentTabData.startDate || currentTabData.parsedData.length === 0}
+                  disabled={loading || !globalStartDate || currentTabData.parsedData.length === 0}
                   className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   기준 날짜로 데이터 추출

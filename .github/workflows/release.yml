@@ -1,0 +1,41 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Generate Release Notes
+        id: release_notes
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const version = process.env.GITHUB_REF.replace('refs/tags/', '');
+            
+            // CHANGELOG에서 해당 버전의 내용 추출
+            const versionRegex = new RegExp(`## \\[${version.replace('v', '')}\\][\\s\\S]*?(?=##|$)`);
+            const match = changelog.match(versionRegex);
+            const body = match ? match[0] : `Release ${version}`;
+            
+            return body;
+      
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: ${{ steps.release_notes.outputs.result }}
+          draft: false
+          prerelease: false

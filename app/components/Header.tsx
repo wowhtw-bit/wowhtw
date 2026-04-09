@@ -32,6 +32,16 @@ export default function Header() {
               구글 시트 데이터 연동
             </Link>
             <Link
+              href="/folder"
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                isActive('/folder')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              폴더 요약
+            </Link>
+            <Link
               href="/dashboard"
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isActive('/dashboard')
